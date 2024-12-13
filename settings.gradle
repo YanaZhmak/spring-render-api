@@ -1,1 +1,4 @@
-rootProject.name = "spring-render-api"
+rootProject.name = "spring-render"
+include 'spring-render-data'
+include 'spring-render-api'
+
