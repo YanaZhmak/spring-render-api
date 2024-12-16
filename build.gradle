@@ -13,10 +13,12 @@ java {
     }
 }
 
+bootJar {
+    enabled = false
+}
+
 jar {
-    manifest {
-        attributes 'Main-Class': 'com.example.spring_render_api.SpringRenderApiApplication'
-    }
+    enabled = true
 }
 
 configurations {

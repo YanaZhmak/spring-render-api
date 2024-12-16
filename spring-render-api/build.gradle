@@ -24,6 +24,12 @@ dependencies {
     implementation project(":spring-render-data")
 }
 
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.example.spring_render.SpringRenderApiApplication'
+    }
+}
+
 test {
     useJUnitPlatform()
 }
