@@ -1,17 +1,15 @@
 package com.example.spring_render.controller;
 
-import com.example.spring_render.dto.ImageResponseDto;
 import com.example.spring_render.dto.PostRequestDto;
 import com.example.spring_render.dto.PostResponseDto;
-import com.example.spring_render.model.Image;
 import com.example.spring_render.model.Post;
 import com.example.spring_render.repository.PostRepository;
-import com.example.spring_render.service.PostService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,9 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,10 +34,6 @@ public class PostController {
     @Autowired
     private PostRepository postRepository;
 
-    @Autowired
-    private PostService postService;
-
-
     /**
      * Endpoint to return all posts
      *
@@ -50,32 +42,25 @@ public class PostController {
 
     @Operation(summary = "Get all posts")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Posts received successfully")
+            @ApiResponse(responseCode = "200", description = "Posts received successfully ")
     })
     @GetMapping("/posts")
-    public List<PostResponseDto> getAllPosts(@RequestParam(required = false) Pageable pageable) {
+    public List<PostResponseDto> getAllPosts(Pageable pageable) {
         List<PostResponseDto> postResponseDtos = new ArrayList<>();
+        Page<Post> posts = postRepository.findAll(pageable);
 
-        if (pageable == null || pageable.isUnpaged()) {
-            List<Post> posts = postRepository.findAll();
-            for (Post post: posts) {
-                postResponseDtos.add(createPostResponseDto(post));
-            }
-        } else {
-            Page<Post> posts = postRepository.findAll(pageable);
-            for (Post post: posts) {
-                postResponseDtos.add(createPostResponseDto(post));
-            }
+        for (Post note : posts) {
+            PostResponseDto postResponseDto = createResponseDto(note);
+            postResponseDtos.add(postResponseDto);
         }
-
         return postResponseDtos;
     }
 
     /**
-     * Endpoint to create a new post with images
-     * @param postRequestDto of post to be created
-     * @param images of images to be created
-     * @return The created PostResponseDto
+     * Endpoint to create a new post
+     *
+     * @param requestDto of post to be created
+     * @return new PostResponseDto object
      */
 
     @Operation(summary = "Create a new post")
@@ -85,21 +70,17 @@ public class PostController {
     }),
             @ApiResponse(responseCode = "400", description = "Bad request. See line error.")
     })
-//    @PostMapping("/createPost")
-//    public PostResponseDto createNewPost(@RequestBody PostRequestDto requestDto) {
-//        validate(requestDto);
-//
-//        Post post = new Post();
-//        post.setDate(requestDto.getDate());
-//        post.setTitle(requestDto.getTitle());
-//        post.setText(requestDto.getText());
-//        post = postRepository.save(post);
-//
-//        return createResponseDto(post);
-//    }
-    @PostMapping(value = "/createPost", consumes = "multipart/form-data")
-    public PostResponseDto createNewPostWithImages(@RequestPart("json") PostRequestDto postRequestDto, @RequestPart("file") MultipartFile[] images) {
-        return createPostResponseDto(postService.savePost(postRequestDto, images));
+    @PostMapping("/createPost")
+    public PostResponseDto createNewPost(@RequestBody PostRequestDto requestDto) {
+        validate(requestDto);
+
+        Post post = new Post();
+        post.setDate(requestDto.getDate());
+        post.setTitle(requestDto.getTitle());
+        post.setText(requestDto.getText());
+        post = postRepository.save(post);
+
+        return createResponseDto(post);
     }
 
     /**
@@ -129,7 +110,7 @@ public class PostController {
         post.setText(updatedPost.getText());
         post = postRepository.save(post);
 
-        return createPostResponseDto(post);
+        return createResponseDto(post);
     }
 
     /**
@@ -149,17 +130,17 @@ public class PostController {
         postRepository.deleteById(id);
     }
 
-//    public void validate(PostRequestDto requestDto) {
-//        if (requestDto.getTitle().isEmpty()) {
-//            throw new ValidationException("Title is empty");
-//        }
-//        if (requestDto.getText().isEmpty()) {
-//            throw new ValidationException("Post is empty");
-//        }
-//        if (requestDto.getText().length() > 5000) {
-//            throw new ValidationException("Your post length exceed 5000 characters");
-//        }
-//    }
+    public void validate(PostRequestDto requestDto) {
+        if (requestDto.getTitle().isEmpty()) {
+            throw new ValidationException("Title is empty");
+        }
+        if (requestDto.getText().isEmpty()) {
+            throw new ValidationException("Post is empty");
+        }
+        if (requestDto.getText().length() > 5000) {
+            throw new ValidationException("Your post length exceed 5000 characters");
+        }
+    }
 
     /**
      * Method to create response Dto
@@ -167,29 +148,14 @@ public class PostController {
      * @param post to converted to PostResponseDto object
      * @return The new PostResponseDto object
      */
-    public PostResponseDto createPostResponseDto(Post post) {
-        List<ImageResponseDto> imageResponseDtoList = new ArrayList<>();
-        List<Image> images = post.getImages();
-        for (Image image: images) {
-            imageResponseDtoList.add(createImageResponseDto(image));
-        }
-
+    public PostResponseDto createResponseDto(Post post) {
         PostResponseDto postDto = new PostResponseDto();
         postDto.setId(post.getId());
         postDto.setDate(post.getDate());
         postDto.setTitle(post.getTitle());
         postDto.setText(post.getText());
-        postDto.setImages(imageResponseDtoList);
+
         return postDto;
-    }
-
-    public ImageResponseDto createImageResponseDto(Image image) {
-        ImageResponseDto imageResponseDto = new ImageResponseDto();
-        imageResponseDto.setId(image.getId());
-        imageResponseDto.setUploadedTime(image.getUploadedTime());
-        imageResponseDto.setUrl(image.getUrl());
-
-        return imageResponseDto;
     }
 
 
