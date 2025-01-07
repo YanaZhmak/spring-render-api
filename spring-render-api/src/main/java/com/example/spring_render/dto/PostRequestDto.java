@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Data
 public class PostRequestDto {
     @Schema(hidden = true)
-    private LocalDateTime date = LocalDateTime.now();
+    private LocalDateTime date;
     private String title;
     private String text;
 }
