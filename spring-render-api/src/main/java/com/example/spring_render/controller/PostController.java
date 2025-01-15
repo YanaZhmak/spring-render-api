@@ -45,14 +45,21 @@ public class PostController {
             @ApiResponse(responseCode = "200", description = "Posts received successfully ")
     })
     @GetMapping("/posts")
-    public List<PostResponseDto> getAllPosts(Pageable pageable) {
+    public List<PostResponseDto> getAllPosts(@RequestParam(required = false) Pageable pageable) {
         List<PostResponseDto> postResponseDtos = new ArrayList<>();
-        Page<Post> posts = postRepository.findAll(pageable);
 
-        for (Post note : posts) {
-            PostResponseDto postResponseDto = createResponseDto(note);
-            postResponseDtos.add(postResponseDto);
+        if (pageable == null || pageable.isUnpaged()) {
+            List<Post> posts = postRepository.findAll();
+            for (Post post: posts) {
+                postResponseDtos.add(createResponseDto(post));
+            }
+        } else {
+            Page<Post> posts = postRepository.findAll(pageable);
+            for (Post note : posts) {
+                postResponseDtos.add(createResponseDto(note));
+            }
         }
+
         return postResponseDtos;
     }
 
