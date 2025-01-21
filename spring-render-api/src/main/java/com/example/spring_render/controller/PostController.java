@@ -13,6 +13,7 @@ import jakarta.validation.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -49,7 +50,7 @@ public class PostController {
         List<PostResponseDto> postResponseDtos = new ArrayList<>();
 
         if (pageable == null || pageable.isUnpaged()) {
-            List<Post> posts = postRepository.findAll();
+            List<Post> posts = postRepository.findAll(Sort.by(Sort.Direction.DESC, "id"));
             for (Post post: posts) {
                 postResponseDtos.add(createResponseDto(post));
             }
